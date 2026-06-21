@@ -40,8 +40,6 @@ export const CATEGORIAS_NEGOCIO = [
 ];
 
 export const PLANOS = {
-  ouro: { label: "Ouro", color: "#8A6111", bg: "#FBEFD3" },
-  prata: { label: "Prata", color: "#5B5550", bg: "#EDEAE4" },
-  bronze: { label: "Bronze", color: "#8A4B26", bg: "#F5E3D5" },
+  pago: { label: "Anunciante", color: "#8A6111", bg: "#FBEFD3", valorPadrao: 24.9 },
   gratuito: null,
 };

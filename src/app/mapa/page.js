@@ -11,13 +11,17 @@ export default async function MapaPage() {
 
   const { data: perfil } = await supabase
     .from("perfis")
-    .select("bairros(nome)")
+    .select("bairro_id, bairros(nome, emergencia_ativa)")
     .eq("id", authData.user.id)
     .single();
 
   return (
     <div style={{ maxWidth: 480, margin: "0 auto", minHeight: "100vh" }}>
-      <TopBar bairroNome={perfil?.bairros?.nome} />
+      <TopBar
+        bairroNome={perfil?.bairros?.nome}
+        bairroId={perfil?.bairro_id}
+        emergenciaAtiva={perfil?.bairros?.emergencia_ativa !== false}
+      />
 
       <div style={{ padding: 20, paddingBottom: 100 }}>
         <div

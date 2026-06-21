@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { Camera, Save, Shield, Phone, MapPin, AlertCircle } from "lucide-react";
+import { Camera, Save, Shield, Phone, MapPin, AlertCircle, LogOut } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { buscarEnderecoPorCep } from "@/lib/cep";
 import VoltarTopBar from "@/components/VoltarTopBar";
@@ -273,6 +273,23 @@ export default function PerfilPage() {
             {salvando ? "Salvando..." : "Salvar perfil"}
           </button>
         </form>
+
+        <div style={{ marginTop: 32, paddingTop: 20, borderTop: "1px solid var(--cor-borda-suave)" }}>
+          <button
+            type="button"
+            onClick={async () => {
+              await supabase.auth.signOut();
+              router.push("/login");
+            }}
+            style={{
+              display: "flex", alignItems: "center", justifyContent: "center", gap: 8, width: "100%",
+              padding: "14px 0", borderRadius: 12, border: "1px solid var(--cor-borda)", background: "#FFFFFF",
+              color: "var(--cor-texto-suave)", fontSize: 14.5, fontWeight: 700, cursor: "pointer",
+            }}
+          >
+            <LogOut size={16} /> Sair da conta
+          </button>
+        </div>
       </div>
     </div>
   );

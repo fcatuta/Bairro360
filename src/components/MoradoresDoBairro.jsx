@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Users, ArrowRightLeft } from "lucide-react";
+import { Users, ArrowRightLeft, LogOut } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 
 export default function MoradoresDoBairro({ moradores, outrosBairros }) {
@@ -13,6 +13,8 @@ export default function MoradoresDoBairro({ moradores, outrosBairros }) {
   const [destino, setDestino] = useState("");
   const [movendo, setMovendo] = useState(false);
   const [erro, setErro] = useState("");
+  const [deslogandoId, setDeslogandoId] = useState(null);
+  const [deslogadoId, setDeslogadoId] = useState(null);
 
   async function handleMover(moradorId) {
     if (!destino) {
@@ -40,6 +42,33 @@ export default function MoradoresDoBairro({ moradores, outrosBairros }) {
     router.refresh();
   }
 
+  async function handleDeslogar(moradorId) {
+    setDeslogandoId(moradorId);
+    setErro("");
+
+    try {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const resp = await fetch("/api/admin/deslogar-usuario", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ targetUserId: moradorId }),
+      });
+      const data = await resp.json();
+
+      if (!resp.ok) {
+        setErro(data.error || "Não foi possível encerrar a sessão.");
+        setDeslogandoId(null);
+        return;
+      }
+
+      setDeslogadoId(moradorId);
+    } catch (e) {
+      console.error("Erro ao encerrar sessão remota:", e);
+      setErro("Não foi possível encerrar a sessão agora.");
+    }
+    setDeslogandoId(null);
+  }
+
   if (moradores.length === 0) return null;
 
   return (
@@ -59,12 +88,27 @@ export default function MoradoresDoBairro({ moradores, outrosBairros }) {
                 )}
               </div>
               {editandoId !== m.id && (
-                <button
-                  onClick={() => { setEditandoId(m.id); setErro(""); }}
-                  style={{ display: "flex", alignItems: "center", gap: 5, background: "none", border: "1px solid var(--cor-borda)", borderRadius: 8, padding: "6px 10px", fontSize: 12, fontWeight: 700, color: "var(--cor-texto-suave)", cursor: "pointer" }}
-                >
-                  <ArrowRightLeft size={12} /> Mover
-                </button>
+                <div style={{ display: "flex", gap: 6 }}>
+                  <button
+                    onClick={() => { setEditandoId(m.id); setErro(""); }}
+                    style={{ display: "flex", alignItems: "center", gap: 5, background: "none", border: "1px solid var(--cor-borda)", borderRadius: 8, padding: "6px 10px", fontSize: 12, fontWeight: 700, color: "var(--cor-texto-suave)", cursor: "pointer" }}
+                  >
+                    <ArrowRightLeft size={12} /> Mover
+                  </button>
+                  <button
+                    onClick={() => handleDeslogar(m.id)}
+                    disabled={deslogandoId === m.id || deslogadoId === m.id}
+                    title="Encerra a sessão ativa desse morador em todos os dispositivos"
+                    style={{
+                      display: "flex", alignItems: "center", gap: 5, background: "none",
+                      border: deslogadoId === m.id ? "1px solid var(--cor-verde)" : "1px solid var(--cor-vermelho)",
+                      borderRadius: 8, padding: "6px 10px", fontSize: 12, fontWeight: 700,
+                      color: deslogadoId === m.id ? "var(--cor-verde)" : "var(--cor-vermelho)", cursor: "pointer",
+                    }}
+                  >
+                    <LogOut size={12} /> {deslogadoId === m.id ? "Sessão encerrada" : deslogandoId === m.id ? "..." : "Deslogar"}
+                  </button>
+                </div>
               )}
             </div>
 
@@ -101,6 +145,7 @@ export default function MoradoresDoBairro({ moradores, outrosBairros }) {
           </div>
         ))}
       </div>
+      {erro && !editandoId && <p style={{ color: "var(--cor-vermelho)", fontSize: 13, marginTop: 8 }}>{erro}</p>}
     </div>
   );
 }

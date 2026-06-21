@@ -2,16 +2,12 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Trash2 } from "lucide-react";
+import { Trash2, RefreshCw } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { CATEGORIAS_NEGOCIO, PLANOS } from "@/lib/constants";
+import { somarMeses, statusVencimento, formatarData } from "@/lib/vencimento";
 
-const PLANO_OPCOES = [
-  { value: "gratuito", label: "Gratuito" },
-  { value: "bronze", label: "Bronze" },
-  { value: "prata", label: "Prata" },
-  { value: "ouro", label: "Ouro" },
-];
+const hoje = new Date().toISOString().split("T")[0];
 
 export default function EditarAnuncianteForm({ negocio }) {
   const router = useRouter();
@@ -19,7 +15,11 @@ export default function EditarAnuncianteForm({ negocio }) {
 
   const [nome, setNome] = useState(negocio.nome || "");
   const [categoria, setCategoria] = useState(negocio.categoria || "outros");
-  const [plano, setPlano] = useState(negocio.plano || "gratuito");
+  const [ehPago, setEhPago] = useState(negocio.plano === "pago");
+  const [planoVencimento, setPlanoVencimento] = useState(negocio.plano_vencimento || "");
+  const [valorMensal, setValorMensal] = useState(negocio.plano_valor_mensal ? String(negocio.plano_valor_mensal) : String(PLANOS.pago.valorPadrao));
+  const [cupomTexto, setCupomTexto] = useState(negocio.cupom_texto || "");
+  const [cupomValidade, setCupomValidade] = useState(negocio.cupom_validade || "");
   const [telefone, setTelefone] = useState(negocio.telefone || "");
   const [whatsapp, setWhatsapp] = useState(negocio.whatsapp || "");
   const [endereco, setEndereco] = useState(negocio.endereco || "");
@@ -30,6 +30,13 @@ export default function EditarAnuncianteForm({ negocio }) {
   const [confirmarExclusao, setConfirmarExclusao] = useState(false);
   const [erro, setErro] = useState("");
   const [sucesso, setSucesso] = useState(false);
+
+  const venc = statusVencimento(ehPago ? "pago" : "gratuito", planoVencimento);
+
+  function handleRenovar(meses) {
+    const base = planoVencimento && planoVencimento >= hoje ? planoVencimento : hoje;
+    setPlanoVencimento(somarMeses(base, meses));
+  }
 
   async function handleExcluir() {
     setErro("");
@@ -60,7 +67,11 @@ export default function EditarAnuncianteForm({ negocio }) {
       .update({
         nome: nome.trim(),
         categoria,
-        plano,
+        plano: ehPago ? "pago" : "gratuito",
+        plano_vencimento: ehPago ? planoVencimento || null : null,
+        plano_valor_mensal: ehPago && valorMensal ? parseFloat(valorMensal) : null,
+        cupom_texto: ehPago && cupomTexto.trim() ? cupomTexto.trim() : null,
+        cupom_validade: ehPago && cupomTexto.trim() && cupomValidade ? cupomValidade : null,
         telefone: telefone.trim() || null,
         whatsapp: whatsapp.trim() || null,
         endereco: endereco.trim() || null,
@@ -95,33 +106,70 @@ export default function EditarAnuncianteForm({ negocio }) {
         </select>
       </Campo>
 
-      <Campo label="Plano contratado">
-        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-          {PLANO_OPCOES.map((p) => {
-            const cores = PLANOS[p.value];
-            const ativoPlano = plano === p.value;
-            return (
+      <label
+        style={{
+          display: "flex", alignItems: "center", gap: 10, padding: "14px 16px", borderRadius: 12,
+          border: ehPago ? "1px solid #8A6111" : "1px solid var(--cor-borda)",
+          background: ehPago ? "#FBEFD3" : "#FFFFFF",
+          cursor: "pointer", marginBottom: 18,
+        }}
+      >
+        <input type="checkbox" checked={ehPago} onChange={(e) => setEhPago(e.target.checked)} style={{ width: 18, height: 18 }} />
+        <span style={{ fontSize: 14, fontWeight: 700, color: ehPago ? "#8A6111" : "var(--cor-texto)" }}>
+          Anunciante pago
+        </span>
+      </label>
+
+      {ehPago && (
+        <div style={{ background: "var(--cor-laranja-bg)", borderRadius: 12, padding: 16, marginBottom: 18 }}>
+          {venc && (
+            <div style={{ display: "inline-block", fontSize: 12, fontWeight: 700, color: venc.color, background: venc.bg, padding: "4px 10px", borderRadius: 10, marginBottom: 12 }}>
+              {venc.label}
+            </div>
+          )}
+
+          <Campo label="Valor mensal (R$)">
+            <input type="number" step="0.01" value={valorMensal} onChange={(e) => setValorMensal(e.target.value)} style={inputStyle} />
+          </Campo>
+
+          <Campo label="Vencimento do plano">
+            <input type="date" value={planoVencimento} onChange={(e) => setPlanoVencimento(e.target.value)} style={inputStyle} />
+          </Campo>
+
+          <label style={{ fontSize: 12.5, fontWeight: 700, color: "var(--cor-texto-fraco)", display: "block", marginBottom: 8 }}>
+            Renovar a partir de hoje (ou do vencimento atual, se ainda não venceu):
+          </label>
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+            {[1, 3, 6, 12].map((m) => (
               <button
-                key={p.value}
+                key={m}
                 type="button"
-                onClick={() => setPlano(p.value)}
+                onClick={() => handleRenovar(m)}
                 style={{
-                  padding: "9px 16px",
-                  borderRadius: 20,
-                  border: ativoPlano ? `1px solid ${cores?.color || "var(--cor-texto)"}` : "1px solid var(--cor-borda)",
-                  background: ativoPlano ? (cores?.bg || "var(--cor-borda-suave)") : "#FFFFFF",
-                  color: ativoPlano ? (cores?.color || "var(--cor-texto)") : "var(--cor-texto-suave)",
-                  fontSize: 13,
-                  fontWeight: 700,
-                  cursor: "pointer",
+                  display: "flex", alignItems: "center", gap: 5, padding: "7px 12px", borderRadius: 16,
+                  border: "1px solid var(--cor-laranja)", background: "#FFFFFF", color: "var(--cor-laranja)",
+                  fontSize: 12.5, fontWeight: 700, cursor: "pointer",
                 }}
               >
-                {p.label}
+                <RefreshCw size={12} /> +{m}m
               </button>
-            );
-          })}
+            ))}
+          </div>
         </div>
-      </Campo>
+      )}
+
+      {ehPago && (
+        <>
+          <Campo label="Cupom de desconto (opcional)">
+            <input value={cupomTexto} onChange={(e) => setCupomTexto(e.target.value)} placeholder='Ex: "10% OFF"' style={inputStyle} />
+          </Campo>
+          {cupomTexto.trim() && (
+            <Campo label="Cupom válido até (opcional)">
+              <input type="date" value={cupomValidade} onChange={(e) => setCupomValidade(e.target.value)} style={inputStyle} />
+            </Campo>
+          )}
+        </>
+      )}
 
       <Campo label="Telefone">
         <input value={telefone} onChange={(e) => setTelefone(e.target.value)} style={inputStyle} />
@@ -143,19 +191,11 @@ export default function EditarAnuncianteForm({ negocio }) {
         type="button"
         onClick={() => setAtivo(!ativo)}
         style={{
-          display: "flex",
-          alignItems: "center",
-          gap: 10,
-          width: "100%",
-          padding: "14px 16px",
-          borderRadius: 12,
+          display: "flex", alignItems: "center", gap: 10, width: "100%", padding: "14px 16px", borderRadius: 12,
           border: ativo ? "1px solid var(--cor-verde)" : "1px solid var(--cor-vermelho)",
           background: ativo ? "var(--cor-verde-bg)" : "var(--cor-vermelho-bg)",
           color: ativo ? "var(--cor-verde)" : "var(--cor-vermelho)",
-          fontSize: 14,
-          fontWeight: 700,
-          cursor: "pointer",
-          marginBottom: 18,
+          fontSize: 14, fontWeight: 700, cursor: "pointer", marginBottom: 18,
         }}
       >
         {ativo ? "✓ Ativo — aparece no guia comercial" : "✕ Inativo — escondido do app"}

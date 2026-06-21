@@ -13,6 +13,7 @@ export default function EditarBairroForm({ bairro, contagens }) {
   const [cidade, setCidade] = useState(bairro.cidade || "");
   const [estado, setEstado] = useState(bairro.estado || "");
   const [ativo, setAtivo] = useState(bairro.ativo);
+  const [emergenciaAtiva, setEmergenciaAtiva] = useState(bairro.emergencia_ativa !== false);
   const [salvando, setSalvando] = useState(false);
   const [excluindo, setExcluindo] = useState(false);
   const [confirmarExclusao, setConfirmarExclusao] = useState(false);
@@ -29,7 +30,7 @@ export default function EditarBairroForm({ bairro, contagens }) {
 
     const { error } = await supabase
       .from("bairros")
-      .update({ nome: nome.trim(), cidade: cidade.trim(), estado: estado.trim().toUpperCase(), ativo })
+      .update({ nome: nome.trim(), cidade: cidade.trim(), estado: estado.trim().toUpperCase(), ativo, emergencia_ativa: emergenciaAtiva })
       .eq("id", bairro.id);
 
     setSalvando(false);
@@ -95,10 +96,26 @@ export default function EditarBairroForm({ bairro, contagens }) {
           border: ativo ? "1px solid var(--cor-verde)" : "1px solid var(--cor-vermelho)",
           background: ativo ? "var(--cor-verde-bg)" : "var(--cor-vermelho-bg)",
           color: ativo ? "var(--cor-verde)" : "var(--cor-vermelho)",
-          fontSize: 14, fontWeight: 700, cursor: "pointer", marginBottom: 20, textAlign: "left",
+          fontSize: 14, fontWeight: 700, cursor: "pointer", marginBottom: 12, textAlign: "left",
         }}
       >
         {ativo ? "✓ Ativo — aparece para novos moradores" : "✕ Desativado — escondido, mas histórico preservado"}
+      </button>
+
+      <button
+        type="button"
+        onClick={() => setEmergenciaAtiva(!emergenciaAtiva)}
+        style={{
+          display: "flex", alignItems: "center", gap: 10, width: "100%", padding: "14px 16px", borderRadius: 12,
+          border: emergenciaAtiva ? "1px solid var(--cor-vermelho)" : "1px solid var(--cor-borda)",
+          background: emergenciaAtiva ? "var(--cor-vermelho-bg)" : "var(--cor-borda-suave)",
+          color: emergenciaAtiva ? "var(--cor-vermelho)" : "var(--cor-texto-fraco)",
+          fontSize: 14, fontWeight: 700, cursor: "pointer", marginBottom: 20, textAlign: "left",
+        }}
+      >
+        {emergenciaAtiva
+          ? "🆘 Botão de emergência ativo neste bairro"
+          : "Botão de emergência desativado neste bairro"}
       </button>
 
       {erro && <p style={{ color: "var(--cor-vermelho)", fontSize: 14, marginBottom: 16 }}>{erro}</p>}

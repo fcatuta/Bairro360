@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { MapPin, Store, Plus, ArrowLeft } from "lucide-react";
+import { MapPin, Store, Plus, ArrowLeft, AlertTriangle, Users } from "lucide-react";
 import { exigirAdmin } from "@/lib/admin";
 
 export default async function AdminHomePage() {
@@ -16,7 +16,12 @@ export default async function AdminHomePage() {
   const { count: totalPagantes } = await supabase
     .from("negocios")
     .select("*", { count: "exact", head: true })
-    .neq("plano", "gratuito");
+    .eq("plano", "pago");
+
+  const { count: alertasPendentes } = await supabase
+    .from("alertas_emergencia")
+    .select("*", { count: "exact", head: true })
+    .eq("resolvido", false);
 
   return (
     <div style={{ maxWidth: 480, margin: "0 auto", minHeight: "100vh", padding: "20px" }}>
@@ -28,6 +33,22 @@ export default async function AdminHomePage() {
           Painel administrativo
         </h1>
       </div>
+
+      {alertasPendentes > 0 && (
+        <Link
+          href="/admin/alertas"
+          style={{
+            display: "flex", alignItems: "center", gap: 10, background: "var(--cor-vermelho)", color: "#FFF",
+            padding: "14px 16px", borderRadius: 12, textDecoration: "none", marginBottom: 20,
+          }}
+        >
+          <AlertTriangle size={20} />
+          <div>
+            <div style={{ fontSize: 15, fontWeight: 700 }}>{alertasPendentes} alerta{alertasPendentes > 1 ? "s" : ""} de emergência pendente{alertasPendentes > 1 ? "s" : ""}</div>
+            <div style={{ fontSize: 12.5, opacity: 0.9 }}>Toque para ver</div>
+          </div>
+        </Link>
+      )}
 
       <div style={{ display: "flex", gap: 10, marginBottom: 28 }}>
         <Cartao numero={totalBairros ?? 0} legenda="Bairros" />
@@ -43,6 +64,10 @@ export default async function AdminHomePage() {
       <Secao titulo="Anunciantes (comércio, prestadores, imobiliárias)">
         <BotaoLink href="/admin/anunciantes" icone={Store} texto="Ver todos os anunciantes" />
         <BotaoLink href="/admin/anunciantes/novo" icone={Plus} texto="Cadastrar novo anunciante" destaque />
+      </Secao>
+
+      <Secao titulo="Segurança">
+        <BotaoLink href="/admin/alertas" icone={AlertTriangle} texto="Alertas de emergência" />
       </Secao>
     </div>
   );

@@ -2,9 +2,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import TopBar from "@/components/TopBar";
 import TabBar from "@/components/TabBar";
-import NegocioCard from "@/components/NegocioCard";
-
-const ORDEM_PLANO = { ouro: 0, prata: 1, bronze: 2, gratuito: 3 };
+import GuiaComercialBusca from "@/components/GuiaComercialBusca";
 
 export default async function ComercioPage() {
   const supabase = await createClient();
@@ -14,7 +12,7 @@ export default async function ComercioPage() {
 
   const { data: perfil } = await supabase
     .from("perfis")
-    .select("bairro_id, bairros(nome)")
+    .select("bairro_id, bairros(nome, emergencia_ativa)")
     .eq("id", authData.user.id)
     .single();
 
@@ -22,32 +20,34 @@ export default async function ComercioPage() {
 
   const { data: negocios } = await supabase
     .from("negocios")
-    .select("id, nome, categoria, plano, avaliacoes(nota)")
+    .select("id, nome, categoria, plano, cupom_texto, cupom_validade, avaliacoes(nota)")
     .eq("bairro_id", perfil?.bairro_id)
     .eq("ativo", true);
 
+  // Ranking: pagantes sempre primeiro; dentro de cada grupo, ordena por nota média.
   const lista = (negocios || [])
     .map((n) => {
       const notas = n.avaliacoes || [];
       const media = notas.length ? notas.reduce((s, a) => s + a.nota, 0) / notas.length : null;
-      return { ...n, nota_media: media, total_avaliacoes: notas.length };
+      const cupomValido =
+        n.cupom_texto && (!n.cupom_validade || n.cupom_validade >= new Date().toISOString().split("T")[0]);
+      return { ...n, nota_media: media, total_avaliacoes: notas.length, cupom_valido: cupomValido };
     })
-    .sort((a, b) => (ORDEM_PLANO[a.plano] ?? 9) - (ORDEM_PLANO[b.plano] ?? 9));
+    .sort((a, b) => {
+      const pagaA = a.plano === "pago" ? 0 : 1;
+      const pagaB = b.plano === "pago" ? 0 : 1;
+      if (pagaA !== pagaB) return pagaA - pagaB;
+      return (b.nota_media ?? 0) - (a.nota_media ?? 0);
+    });
 
   return (
     <div style={{ maxWidth: 480, margin: "0 auto", minHeight: "100vh" }}>
-      <TopBar bairroNome={perfil?.bairros?.nome} />
-
-      <div style={{ padding: "16px 20px 100px" }}>
-        {lista.length === 0 ? (
-          <p style={{ textAlign: "center", color: "var(--cor-texto-fraco)", padding: "40px 0" }}>
-            Nenhum comércio cadastrado no seu bairro ainda.
-          </p>
-        ) : (
-          lista.map((item) => <NegocioCard key={item.id} item={item} />)
-        )}
-      </div>
-
+      <TopBar
+        bairroNome={perfil?.bairros?.nome}
+        bairroId={perfil?.bairro_id}
+        emergenciaAtiva={perfil?.bairros?.emergencia_ativa !== false}
+      />
+      <GuiaComercialBusca negocios={lista} />
       <TabBar />
     </div>
   );

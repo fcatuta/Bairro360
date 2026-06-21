@@ -15,7 +15,7 @@ export default async function FeedPage() {
 
   const { data: perfil } = await supabase
     .from("perfis")
-    .select("bairro_id, tipo, bairros(nome)")
+    .select("bairro_id, tipo, bairros(nome, emergencia_ativa)")
     .eq("id", authData.user.id)
     .single();
 
@@ -47,7 +47,11 @@ export default async function FeedPage() {
 
   return (
     <div style={{ maxWidth: 480, margin: "0 auto", minHeight: "100vh", position: "relative" }}>
-      <TopBar bairroNome={perfil?.bairros?.nome} />
+      <TopBar
+        bairroNome={perfil?.bairros?.nome}
+        bairroId={bairroId}
+        emergenciaAtiva={perfil?.bairros?.emergencia_ativa !== false}
+      />
 
       <div style={{ padding: "10px 20px 0", display: "flex", gap: 8 }}>
         <a

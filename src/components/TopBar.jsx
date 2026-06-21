@@ -1,8 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { ChevronLeft, MapPin, PhoneCall, Users, CheckCircle2, X } from "lucide-react";
+import { ChevronLeft, MapPin, PhoneCall, Users, CheckCircle2, X, Loader2 } from "lucide-react";
 import Logo from "./Logo";
+import { createClient } from "@/lib/supabase/client";
 
 function EmergencyButton({ onOpen }) {
   return (
@@ -30,8 +31,50 @@ function EmergencyButton({ onOpen }) {
   );
 }
 
-function EmergencyModal({ onClose }) {
+function EmergencyModal({ onClose, bairroId }) {
+  const supabase = createClient();
   const [avisado, setAvisado] = useState(false);
+  const [enviando, setEnviando] = useState(false);
+  const [erro, setErro] = useState("");
+
+  async function handleAvisar() {
+    setErro("");
+    setEnviando(true);
+
+    const { data: authData } = await supabase.auth.getUser();
+    if (!authData?.user) {
+      setErro("Você precisa estar logado.");
+      setEnviando(false);
+      return;
+    }
+
+    // Tenta capturar localização do navegador (opcional — funciona sem ela também)
+    const localizacao = await new Promise((resolve) => {
+      if (!navigator.geolocation) return resolve(null);
+      navigator.geolocation.getCurrentPosition(
+        (pos) => resolve({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
+        () => resolve(null),
+        { timeout: 5000 }
+      );
+    });
+
+    const { error } = await supabase.from("alertas_emergencia").insert({
+      bairro_id: bairroId,
+      morador_id: authData.user.id,
+      latitude: localizacao?.lat ?? null,
+      longitude: localizacao?.lng ?? null,
+    });
+
+    setEnviando(false);
+
+    if (error) {
+      console.error("Erro ao enviar alerta:", error);
+      setErro("Não foi possível enviar o aviso agora. Ligue para a polícia se for urgente.");
+      return;
+    }
+
+    setAvisado(true);
+  }
 
   return (
     <div
@@ -89,8 +132,8 @@ function EmergencyModal({ onClose }) {
         </a>
 
         <button
-          onClick={() => setAvisado(true)}
-          disabled={avisado}
+          onClick={handleAvisar}
+          disabled={avisado || enviando}
           style={{
             display: "flex",
             alignItems: "center",
@@ -102,23 +145,25 @@ function EmergencyModal({ onClose }) {
             color: avisado ? "var(--cor-verde)" : "#FFFFFF",
             border: "none",
             cursor: avisado ? "default" : "pointer",
-            marginBottom: 16,
+            marginBottom: 8,
             boxSizing: "border-box",
             textAlign: "left",
           }}
         >
-          {avisado ? <CheckCircle2 size={24} /> : <Users size={24} />}
+          {avisado ? <CheckCircle2 size={24} /> : enviando ? <Loader2 size={24} className="spin" /> : <Users size={24} />}
           <div>
             <div style={{ fontSize: 17, fontWeight: 700 }}>
-              {avisado ? "Vizinhança avisada" : "Avisar a vizinhança"}
+              {avisado ? "Aviso enviado" : enviando ? "Enviando..." : "Avisar a vizinhança"}
             </div>
             <div style={{ fontSize: 13, opacity: 0.85 }}>
               {avisado
-                ? "Sua localização foi enviada aos moderadores"
-                : "Envia sua localização aos moderadores do bairro"}
+                ? "Os administradores do bairro foram notificados"
+                : "Notifica os administradores do bairro, com sua localização"}
             </div>
           </div>
         </button>
+
+        {erro && <p style={{ color: "var(--cor-vermelho)", fontSize: 13, margin: "0 0 8px" }}>{erro}</p>}
 
         <p style={{ fontSize: 13, color: "var(--cor-texto-fraco)", textAlign: "center", margin: 0, lineHeight: 1.5 }}>
           Em perigo imediato, ligue para a polícia primeiro.
@@ -128,7 +173,7 @@ function EmergencyModal({ onClose }) {
   );
 }
 
-export default function TopBar({ bairroNome, onBack, title }) {
+export default function TopBar({ bairroNome, bairroId, emergenciaAtiva = true, onBack, title }) {
   const [emergenciaAberta, setEmergenciaAberta] = useState(false);
 
   return (
@@ -175,10 +220,10 @@ export default function TopBar({ bairroNome, onBack, title }) {
             </>
           )}
         </div>
-        {!onBack && <EmergencyButton onOpen={() => setEmergenciaAberta(true)} />}
+        {!onBack && emergenciaAtiva && bairroId && <EmergencyButton onOpen={() => setEmergenciaAberta(true)} />}
       </div>
 
-      {emergenciaAberta && <EmergencyModal onClose={() => setEmergenciaAberta(false)} />}
+      {emergenciaAberta && <EmergencyModal onClose={() => setEmergenciaAberta(false)} bairroId={bairroId} />}
     </>
   );
 }
