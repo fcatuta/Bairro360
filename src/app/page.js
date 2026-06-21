@@ -49,8 +49,25 @@ export default async function FeedPage() {
     <div style={{ maxWidth: 480, margin: "0 auto", minHeight: "100vh", position: "relative" }}>
       <TopBar bairroNome={perfil?.bairros?.nome} />
 
-      {perfil?.tipo === "administrador" && (
-        <div style={{ padding: "10px 20px 0" }}>
+      <div style={{ padding: "10px 20px 0", display: "flex", gap: 8 }}>
+        <a
+          href="/perfil"
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            gap: 6,
+            fontSize: 12.5,
+            fontWeight: 700,
+            color: "var(--cor-texto-fraco)",
+            textDecoration: "none",
+            border: "1px solid var(--cor-borda)",
+            padding: "5px 12px",
+            borderRadius: 20,
+          }}
+        >
+          👤 Meu perfil
+        </a>
+        {perfil?.tipo === "administrador" && (
           <a
             href="/admin"
             style={{
@@ -68,8 +85,8 @@ export default async function FeedPage() {
           >
             ⚙ Painel administrativo
           </a>
-        </div>
-      )}
+        )}
+      </div>
 
       <div style={{ padding: "16px 20px 100px" }}>
         {lista.length === 0 ? (
