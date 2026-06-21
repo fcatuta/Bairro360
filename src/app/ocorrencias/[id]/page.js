@@ -1,7 +1,9 @@
+import Link from "next/link";
 import { redirect, notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import OcorrenciaInteracao from "@/components/OcorrenciaInteracao";
 import OcorrenciaGestao from "@/components/OcorrenciaGestao";
+import OcorrenciaRealtime from "@/components/OcorrenciaRealtime";
 import VoltarTopBar from "@/components/VoltarTopBar";
 import { CATEGORIAS, STATUS } from "@/lib/constants";
 
@@ -30,7 +32,7 @@ export default async function OcorrenciaDetalhePage({ params }) {
       id, categoria, titulo, descricao, status, criado_em, autor_id,
       perfis ( nome_completo ),
       ocorrencia_confirmacoes ( id, morador_id ),
-      ocorrencia_comentarios ( id, texto, criado_em, perfis ( nome_completo ) )
+      ocorrencia_comentarios ( id, texto, criado_em, autor_id, perfis ( nome_completo ) )
       `
     )
     .eq("id", id)
@@ -57,6 +59,7 @@ export default async function OcorrenciaDetalhePage({ params }) {
 
   return (
     <div style={{ maxWidth: 480, margin: "0 auto", minHeight: "100vh" }}>
+      <OcorrenciaRealtime ocorrenciaId={item.id} />
       <VoltarTopBar title="Ocorrência" />
 
       <div style={{ padding: 20, paddingBottom: 40 }}>
@@ -86,7 +89,10 @@ export default async function OcorrenciaDetalhePage({ params }) {
           {item.titulo}
         </h2>
         <p style={{ fontSize: 14, color: "var(--cor-texto-fraco)", margin: "0 0 16px" }}>
-          {item.perfis?.nome_completo || "Morador"} · {tempoRelativo(item.criado_em)}
+          <Link href={`/morador/${item.autor_id}`} style={{ color: "inherit", fontWeight: 700, textDecoration: "none" }}>
+            {item.perfis?.nome_completo || "Morador"}
+          </Link>{" "}
+          · {tempoRelativo(item.criado_em)}
         </p>
         <p style={{ fontSize: 16, color: "var(--cor-texto)", lineHeight: 1.65, margin: "0 0 20px" }}>
           {item.descricao}
@@ -114,7 +120,9 @@ export default async function OcorrenciaDetalhePage({ params }) {
         {comentarios.map((c) => (
           <div key={c.id} style={{ marginBottom: 14, paddingBottom: 14, borderBottom: "1px solid var(--cor-borda-suave)" }}>
             <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
-              <span style={{ fontSize: 13, fontWeight: 700 }}>{c.perfis?.nome_completo || "Morador"}</span>
+              <Link href={`/morador/${c.autor_id}`} style={{ fontSize: 13, fontWeight: 700, color: "inherit", textDecoration: "none" }}>
+                {c.perfis?.nome_completo || "Morador"}
+              </Link>
               <span style={{ fontSize: 12, color: "var(--cor-texto-fraco)" }}>{tempoRelativo(c.criado_em)}</span>
             </div>
             <p style={{ fontSize: 14, color: "var(--cor-texto)", margin: 0, lineHeight: 1.5 }}>{c.texto}</p>

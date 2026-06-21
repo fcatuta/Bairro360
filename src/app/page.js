@@ -4,6 +4,7 @@ import TopBar from "@/components/TopBar";
 import TabBar from "@/components/TabBar";
 import OcorrenciaCard from "@/components/OcorrenciaCard";
 import NovoBotaoFlutuante from "@/components/NovoBotaoFlutuante";
+import FeedRealtime from "@/components/FeedRealtime";
 
 export default async function FeedPage() {
   const supabase = await createClient();
@@ -29,7 +30,7 @@ export default async function FeedPage() {
     .from("ocorrencias")
     .select(
       `
-      id, categoria, titulo, descricao, status, criado_em,
+      id, categoria, titulo, descricao, status, criado_em, autor_id,
       perfis ( nome_completo ),
       ocorrencia_confirmacoes ( id ),
       ocorrencia_comentarios ( id )
@@ -47,6 +48,7 @@ export default async function FeedPage() {
 
   return (
     <div style={{ maxWidth: 480, margin: "0 auto", minHeight: "100vh", position: "relative" }}>
+      <FeedRealtime bairroId={bairroId} />
       <TopBar
         bairroNome={perfil?.bairros?.nome}
         bairroId={bairroId}

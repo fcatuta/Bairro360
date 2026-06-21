@@ -7,7 +7,7 @@ export default function Logo({ size = 30 }) {
         width: size,
         height: size,
         borderRadius: "50%",
-        background: "linear-gradient(135deg, #F2902E 0%, #E8590C 60%)",
+        background: "var(--gradiente-laranja, linear-gradient(135deg, #F2902E 0%, #E25608 65%, #C2440A 100%))",
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
