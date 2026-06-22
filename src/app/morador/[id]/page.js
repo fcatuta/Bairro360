@@ -8,10 +8,18 @@ function formatarMesAno(dataIso) {
   return d.toLocaleDateString("pt-BR", { month: "long", year: "numeric" });
 }
 
+function InfoLinha({ icone: Icone, texto }) {
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
+      <Icone size={16} color="var(--cor-texto-fraco)" />
+      <span style={{ fontSize: 14, color: "var(--cor-texto-suave)" }}>{texto}</span>
+    </div>
+  );
+}
+
 export default async function PerfilPublicoPage({ params }) {
   const { id } = await params;
   const supabase = await createClient();
-
   const { data: authData } = await supabase.auth.getUser();
   if (!authData?.user) redirect("/login");
 
@@ -28,7 +36,6 @@ export default async function PerfilPublicoPage({ params }) {
   return (
     <div style={{ maxWidth: 480, margin: "0 auto", minHeight: "100vh" }}>
       <VoltarTopBar title="Perfil do morador" />
-
       <div style={{ padding: 20 }}>
         <div style={{ display: "flex", flexDirection: "column", alignItems: "center", marginBottom: 24 }}>
           <div
@@ -48,7 +55,9 @@ export default async function PerfilPublicoPage({ params }) {
           </div>
           <h1 style={{ fontFamily: "var(--fonte-titulo)", fontSize: 21, fontWeight: 700, margin: 0, textAlign: "center" }}>
             {morador.nome_completo}
-            {ehOProprioUsuario && <span style={{ fontSize: 13, color: "var(--cor-texto-fraco)", fontWeight: 400 }}> (você)</span>}
+            {ehOProprioUsuario && (
+              <span style={{ fontSize: 13, color: "var(--cor-texto-fraco)", fontWeight: 400 }}> (você)</span>
+            )}
           </h1>
           {morador.tipo !== "morador" && (
             <span style={{ fontSize: 12, fontWeight: 700, color: "var(--cor-laranja)", textTransform: "capitalize", marginTop: 4 }}>
@@ -59,15 +68,22 @@ export default async function PerfilPublicoPage({ params }) {
 
         <div style={{ background: "#FFFFFF", border: "1px solid var(--cor-borda)", borderRadius: 14, padding: 16 }}>
           {morador.bairros?.nome && (
-            <InfoLinha icone={MapPin} texto={morador.endereco_rua ? `${morador.endereco_rua} · ${morador.bairros.nome}` : morador.bairros.nome} />
+            <InfoLinha
+              icone={MapPin}
+              texto={morador.endereco_rua ? `${morador.endereco_rua} · ${morador.bairros.nome}` : morador.bairros.nome}
+            />
           )}
           <InfoLinha icone={Calendar} texto={`No bairro desde ${formatarMesAno(morador.criado_em)}`} />
           {morador.whatsapp && (
-            <a
+            
               href={`https://wa.me/55${morador.whatsapp.replace(/\D/g, "")}`}
               target="_blank"
               rel="noopener noreferrer"
-              style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 14, padding: "12px 14px", borderRadius: 10, background: "var(--cor-verde)", color: "#FFF", textDecoration: "none", fontSize: 14, fontWeight: 700 }}
+              style={{
+                display: "flex", alignItems: "center", gap: 10, marginTop: 14,
+                padding: "12px 14px", borderRadius: 10, background: "var(--cor-verde)",
+                color: "#FFF", textDecoration: "none", fontSize: 14, fontWeight: 700,
+              }}
             >
               <Phone size={16} /> Chamar no WhatsApp
             </a>
