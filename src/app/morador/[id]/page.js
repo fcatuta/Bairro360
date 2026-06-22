@@ -76,7 +76,7 @@ export default async function PerfilPublicoPage({ params }) {
           <InfoLinha icone={Calendar} texto={`No bairro desde ${formatarMesAno(morador.criado_em)}`} />
           {morador.whatsapp && (
             
-              href={`https://wa.me/55${morador.whatsapp.replace(/\D/g, "")}`}
+            <a  href={`https://wa.me/55${morador.whatsapp.replace(/\D/g, "")}`}
               target="_blank"
               rel="noopener noreferrer"
               style={{
