@@ -21,7 +21,7 @@ export default function TabBar() {
         left: 0,
         right: 0,
         background: "#FFFFFF",
-        borderTop: "1px solid var(--cor-borda)",
+        borderTop: "1px solid #E2E8F0",
         display: "flex",
         padding: "8px 0 10px",
         maxWidth: 480,
@@ -43,7 +43,7 @@ export default function TabBar() {
               alignItems: "center",
               gap: 4,
               textDecoration: "none",
-              color: isAtivo ? "var(--cor-laranja)" : "var(--cor-texto-fraco)",
+              color: isAtivo ? "#F97316" : "#64748B",
               padding: "6px 0",
               minHeight: 52,
             }}

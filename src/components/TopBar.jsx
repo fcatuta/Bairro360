@@ -14,15 +14,16 @@ function EmergencyButton({ onOpen }) {
         display: "flex",
         alignItems: "center",
         gap: 6,
-        background: "var(--cor-vermelho)",
+        background: "#DC2626",
         border: "none",
-        borderRadius: 22,
+        borderRadius: 16,
         padding: "9px 16px",
         color: "#FFFFFF",
         fontSize: 14,
         fontWeight: 700,
         cursor: "pointer",
         flexShrink: 0,
+        boxShadow: "0 4px 15px rgba(220,38,38,0.20)",
       }}
     >
       <PhoneCall size={17} />
@@ -48,7 +49,6 @@ function EmergencyModal({ onClose, bairroId }) {
       return;
     }
 
-    // Tenta capturar localização do navegador (opcional — funciona sem ela também)
     const localizacao = await new Promise((resolve) => {
       if (!navigator.geolocation) return resolve(null);
       navigator.geolocation.getCurrentPosition(
@@ -81,7 +81,7 @@ function EmergencyModal({ onClose, bairroId }) {
       style={{
         position: "fixed",
         inset: 0,
-        background: "rgba(43,38,34,0.55)",
+        background: "rgba(15,23,42,0.55)",
         display: "flex",
         alignItems: "flex-end",
         justifyContent: "center",
@@ -117,7 +117,7 @@ function EmergencyModal({ onClose, bairroId }) {
             width: "100%",
             padding: "16px 18px",
             borderRadius: 14,
-            background: "var(--cor-vermelho)",
+            background: "#DC2626",
             color: "#FFFFFF",
             textDecoration: "none",
             marginBottom: 12,
@@ -163,7 +163,7 @@ function EmergencyModal({ onClose, bairroId }) {
           </div>
         </button>
 
-        {erro && <p style={{ color: "var(--cor-vermelho)", fontSize: 13, margin: "0 0 8px" }}>{erro}</p>}
+        {erro && <p style={{ color: "#DC2626", fontSize: 13, margin: "0 0 8px" }}>{erro}</p>}
 
         <p style={{ fontSize: 13, color: "var(--cor-texto-fraco)", textAlign: "center", margin: 0, lineHeight: 1.5 }}>
           Em perigo imediato, ligue para a polícia primeiro.
@@ -183,9 +183,10 @@ export default function TopBar({ bairroNome, bairroId, emergenciaAtiva = true, o
           position: "sticky",
           top: 0,
           zIndex: 10,
-          background: "var(--cor-fundo)",
-          borderBottom: "1px solid var(--cor-borda)",
+          background: "#FFFFFF",
+          borderBottom: "1px solid #E2E8F0",
           padding: "14px 20px",
+          height: 80,
           display: "flex",
           alignItems: "center",
           gap: 12,
@@ -204,23 +205,25 @@ export default function TopBar({ bairroNome, bairroId, emergenciaAtiva = true, o
         )}
         <div style={{ flex: 1, minWidth: 0 }}>
           {title ? (
-            <div style={{ fontFamily: "var(--fonte-titulo)", fontSize: 18, fontWeight: 700, color: "var(--cor-texto)" }}>
+            <div style={{ fontSize: 18, fontWeight: 700, color: "#1E293B" }}>
               {title}
             </div>
           ) : (
             <>
-              <div style={{ fontFamily: "var(--fonte-titulo)", fontSize: 17, fontWeight: 700, color: "var(--cor-texto)", lineHeight: 1.1 }}>
+              <div style={{ fontSize: 17, fontWeight: 700, color: "#1E293B", lineHeight: 1.1 }}>
                 Bairro360
               </div>
               {bairroNome && (
-                <div style={{ fontSize: 13, color: "var(--cor-texto-fraco)", display: "flex", alignItems: "center", gap: 3 }}>
-                  <MapPin size={12} /> {bairroNome}
+                <div style={{ fontSize: 13, color: "#64748B", display: "flex", alignItems: "center", gap: 3 }}>
+                  <MapPin size={12} color="#F97316" /> {bairroNome}
                 </div>
               )}
             </>
           )}
         </div>
-        {!onBack && emergenciaAtiva && bairroId && <EmergencyButton onOpen={() => setEmergenciaAberta(true)} />}
+        {!onBack && emergenciaAtiva && bairroId && (
+          <EmergencyButton onOpen={() => setEmergenciaAberta(true)} />
+        )}
       </div>
 
       {emergenciaAberta && <EmergencyModal onClose={() => setEmergenciaAberta(false)} bairroId={bairroId} />}
