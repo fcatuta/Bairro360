@@ -5,11 +5,10 @@ import { Search } from "lucide-react";
 import NegocioCard from "./NegocioCard";
 import { CATEGORIAS_NEGOCIO } from "@/lib/constants";
 
-export default function GuiaComercialBusca({ negocios }) {
+export default function GuiaComercialBusca({ negocios, ruaMorador, bairroNome }) {
   const [busca, setBusca] = useState("");
   const [categoriaAtiva, setCategoriaAtiva] = useState(null);
 
-  // Só mostra como filtro as categorias que realmente têm algum negócio cadastrado
   const categoriasComItens = useMemo(() => {
     const presentes = new Set(negocios.map((n) => n.categoria));
     return CATEGORIAS_NEGOCIO.filter((c) => presentes.has(c.value));
@@ -78,7 +77,9 @@ export default function GuiaComercialBusca({ negocios }) {
           {negocios.length === 0 ? "Nenhum comércio cadastrado no seu bairro ainda." : "Nada encontrado para essa busca."}
         </p>
       ) : (
-        lista.map((item) => <NegocioCard key={item.id} item={item} />)
+        lista.map((item) => (
+          <NegocioCard key={item.id} item={item} ruaMorador={ruaMorador} bairroNome={bairroNome} />
+        ))
       )}
     </div>
   );

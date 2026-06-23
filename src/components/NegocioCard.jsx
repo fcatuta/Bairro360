@@ -8,8 +8,17 @@ function labelCategoria(value) {
   return CATEGORIAS_NEGOCIO.find((c) => c.value === value)?.label || value;
 }
 
-export default function NegocioCard({ item }) {
+export default function NegocioCard({ item, ruaMorador, bairroNome }) {
   const plano = PLANOS[item.plano];
+
+  // Monta mensagem personalizada igual à página do anunciante
+  const localizacao = ruaMorador
+    ? `da ${ruaMorador}, aqui no ${bairroNome}`
+    : `do ${bairroNome}`;
+  const artigo = item.nome.match(/^[aeiouAEIOU]/) ? "a" : "o";
+  const mensagemWhatsApp = encodeURIComponent(
+    `Olá! Vi o anúncio d${artigo} ${item.nome} no app Bairro360. Sou morador ${localizacao}. Podemos conversar?`
+  );
 
   return (
     <div
@@ -24,17 +33,10 @@ export default function NegocioCard({ item }) {
       <Link href={`/comercio/${item.id}`} style={{ display: "flex", gap: 12, alignItems: "center", textDecoration: "none", color: "inherit" }}>
         <div
           style={{
-            width: 46,
-            height: 46,
-            borderRadius: 12,
+            width: 46, height: 46, borderRadius: 12,
             background: "var(--cor-borda-suave)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            flexShrink: 0,
-            color: "var(--cor-texto-fraco)",
-            fontWeight: 700,
-            fontSize: 16,
+            display: "flex", alignItems: "center", justifyContent: "center",
+            flexShrink: 0, color: "var(--cor-texto-fraco)", fontWeight: 700, fontSize: 16,
           }}
         >
           {item.nome.charAt(0)}
@@ -68,7 +70,7 @@ export default function NegocioCard({ item }) {
 
       {item.whatsapp && (
         <a
-          href={`https://wa.me/55${item.whatsapp.replace(/\D/g, "")}`}
+          href={`https://wa.me/55${item.whatsapp.replace(/\D/g, "")}?text=${mensagemWhatsApp}`}
           target="_blank"
           rel="noopener noreferrer"
           onClick={(e) => e.stopPropagation()}
