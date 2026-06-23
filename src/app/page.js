@@ -5,6 +5,7 @@ import TabBar from "@/components/TabBar";
 import NovoBotaoFlutuante from "@/components/NovoBotaoFlutuante";
 import FeedRealtime from "@/components/FeedRealtime";
 import FeedFiltro from "@/components/FeedFiltro";
+import { CheckCircle2 } from "lucide-react";
 
 export default async function FeedPage() {
   const supabase = await createClient();
@@ -22,17 +23,24 @@ export default async function FeedPage() {
 
   const bairroId = perfil.bairro_id;
 
-  const { data: ocorrencias } = await supabase
-    .from("ocorrencias")
-    .select(
-      `id, categoria, titulo, descricao, status, criado_em, autor_id,
-      perfis ( nome_completo ),
-      ocorrencia_confirmacoes ( id ),
-      ocorrencia_comentarios ( id )`
-    )
-    .eq("bairro_id", bairroId)
-    .order("criado_em", { ascending: false })
-    .limit(50);
+  const [{ data: ocorrencias }, { count: totalResolvidas }] = await Promise.all([
+    supabase
+      .from("ocorrencias")
+      .select(
+        `id, categoria, titulo, descricao, status, criado_em, autor_id,
+        perfis ( nome_completo ),
+        ocorrencia_confirmacoes ( id ),
+        ocorrencia_comentarios ( id )`
+      )
+      .eq("bairro_id", bairroId)
+      .order("criado_em", { ascending: false })
+      .limit(50),
+    supabase
+      .from("ocorrencias")
+      .select("*", { count: "exact", head: true })
+      .eq("bairro_id", bairroId)
+      .eq("status", "resolvida"),
+  ]);
 
   const lista = (ocorrencias || []).map((o) => ({
     ...o,
@@ -75,6 +83,25 @@ export default async function FeedPage() {
           </a>
         )}
       </div>
+
+      {/* Contador de resolvidas */}
+      {totalResolvidas > 0 && (
+        <div style={{
+          margin: "12px 20px 0",
+          padding: "10px 14px",
+          borderRadius: 12,
+          background: "#F0FDFA",
+          border: "1px solid #0F766E",
+          display: "flex",
+          alignItems: "center",
+          gap: 8,
+        }}>
+          <CheckCircle2 size={16} color="#0F766E" />
+          <span style={{ fontSize: 13, fontWeight: 700, color: "#0F766E" }}>
+            {totalResolvidas} {totalResolvidas === 1 ? "problema resolvido" : "problemas resolvidos"} no {perfil?.bairros?.nome} 🎉
+          </span>
+        </div>
+      )}
 
       <FeedFiltro ocorrencias={lista} />
 
