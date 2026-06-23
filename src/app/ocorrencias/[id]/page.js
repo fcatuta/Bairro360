@@ -29,7 +29,7 @@ export default async function OcorrenciaDetalhePage({ params }) {
     .from("ocorrencias")
     .select(
       `
-      id, categoria, titulo, descricao, status, criado_em, autor_id,
+      id, categoria, titulo, descricao, status, criado_em, autor_id, foto_url,
       perfis ( nome_completo ),
       ocorrencia_confirmacoes ( id, morador_id ),
       ocorrencia_comentarios ( id, texto, criado_em, autor_id, perfis ( nome_completo ) )
@@ -63,37 +63,54 @@ export default async function OcorrenciaDetalhePage({ params }) {
       <VoltarTopBar title="Ocorrência" />
 
       <div style={{ padding: 20, paddingBottom: 40 }}>
+        {/* Categoria + status */}
         <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 12 }}>
-          <span
-            style={{
-              display: "inline-flex",
-              alignItems: "center",
-              gap: 5,
-              background: cat.bg,
-              color: cat.color,
-              padding: "4px 10px",
-              borderRadius: 20,
-              fontSize: 12,
-              fontWeight: 600,
-            }}
-          >
+          <span style={{
+            display: "inline-flex", alignItems: "center", gap: 5,
+            background: cat.bg, color: cat.color,
+            padding: "4px 10px", borderRadius: 20, fontSize: 12, fontWeight: 600,
+          }}>
             <Icon size={13} />
             {cat.label}
           </span>
-          <span style={{ fontSize: 11, fontWeight: 700, color: st.color, background: st.bg, padding: "3px 9px", borderRadius: 12 }}>
+          <span style={{
+            fontSize: 11, fontWeight: 700, color: st.color,
+            background: st.bg, padding: "3px 9px", borderRadius: 12,
+          }}>
             {st.label}
           </span>
         </div>
 
+        {/* Título */}
         <h2 style={{ fontFamily: "var(--fonte-titulo)", fontSize: 22, fontWeight: 700, margin: "0 0 8px", lineHeight: 1.3 }}>
           {item.titulo}
         </h2>
+
+        {/* Autor + tempo */}
         <p style={{ fontSize: 14, color: "var(--cor-texto-fraco)", margin: "0 0 16px" }}>
           <Link href={`/morador/${item.autor_id}`} style={{ color: "inherit", fontWeight: 700, textDecoration: "none" }}>
             {item.perfis?.nome_completo || "Morador"}
           </Link>{" "}
           · {tempoRelativo(item.criado_em)}
         </p>
+
+        {/* Foto da ocorrência */}
+        {item.foto_url && (
+          <div style={{ marginBottom: 20 }}>
+            <img
+              src={item.foto_url}
+              alt="Foto da ocorrência"
+              style={{
+                width: "100%", borderRadius: 14, objectFit: "cover",
+                maxHeight: 300, display: "block",
+                border: "1px solid var(--cor-borda)",
+                boxShadow: "0 2px 12px rgba(15,23,42,0.08)",
+              }}
+            />
+          </div>
+        )}
+
+        {/* Descrição */}
         <p style={{ fontSize: 16, color: "var(--cor-texto)", lineHeight: 1.65, margin: "0 0 20px" }}>
           {item.descricao}
         </p>
@@ -111,6 +128,7 @@ export default async function OcorrenciaDetalhePage({ params }) {
           totalConfirmacoes={item.ocorrencia_confirmacoes?.length || 0}
         />
 
+        {/* Comentários */}
         <h3 style={{ fontSize: 14, fontWeight: 700, marginTop: 24, marginBottom: 12 }}>
           Comentários ({comentarios.length})
         </h3>
