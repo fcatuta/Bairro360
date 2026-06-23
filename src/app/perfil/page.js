@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { Camera, Save, Shield, Phone, MapPin, AlertCircle, LogOut } from "lucide-react";
+import { Camera, Save, Shield, AlertCircle, LogOut, Eye, EyeOff } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { buscarEnderecoPorCep } from "@/lib/cep";
 import VoltarTopBar from "@/components/VoltarTopBar";
@@ -26,6 +26,10 @@ export default function PerfilPage() {
   const [buscandoCep, setBuscandoCep] = useState(false);
   const [contatoNome, setContatoNome] = useState("");
   const [contatoTelefone, setContatoTelefone] = useState("");
+
+  // Privacidade
+  const [visivelNaLista, setVisivelNaLista] = useState(false);
+  const [whatsappPublico, setWhatsappPublico] = useState(false);
 
   const [salvando, setSalvando] = useState(false);
   const [erro, setErro] = useState("");
@@ -62,6 +66,8 @@ export default function PerfilPage() {
       setNumero(perfil.endereco_numero || "");
       setContatoNome(perfil.contato_emergencia_nome || "");
       setContatoTelefone(perfil.contato_emergencia_telefone || "");
+      setVisivelNaLista(perfil.visivel_na_lista ?? false);
+      setWhatsappPublico(perfil.whatsapp_publico ?? false);
       setCarregando(false);
     }
     carregar();
@@ -74,9 +80,7 @@ export default function PerfilPage() {
       setBuscandoCep(true);
       const endereco = await buscarEnderecoPorCep(valor);
       setBuscandoCep(false);
-      if (endereco) {
-        setRua(endereco.rua);
-      }
+      if (endereco) setRua(endereco.rua);
     }
   }
 
@@ -100,14 +104,13 @@ export default function PerfilPage() {
       .upload(caminho, file, { upsert: true });
 
     if (erroUpload) {
-      console.error("Erro ao enviar foto:", erroUpload);
       setErro(`Não foi possível enviar a foto: ${erroUpload.message}`);
       setEnviandoFoto(false);
       return;
     }
 
     const { data: urlData } = supabase.storage.from("fotos-perfil").getPublicUrl(caminho);
-    const novaUrl = `${urlData.publicUrl}?t=${Date.now()}`; // evita cache da foto antiga
+    const novaUrl = `${urlData.publicUrl}?t=${Date.now()}`;
 
     const { error: erroPerfil } = await supabase
       .from("perfis")
@@ -117,7 +120,6 @@ export default function PerfilPage() {
     setEnviandoFoto(false);
 
     if (erroPerfil) {
-      console.error("Erro ao salvar URL da foto:", erroPerfil);
       setErro(`Foto enviada, mas houve um erro ao salvar: ${erroPerfil.message}`);
       return;
     }
@@ -142,13 +144,14 @@ export default function PerfilPage() {
         endereco_numero: numero.trim() || null,
         contato_emergencia_nome: contatoNome.trim() || null,
         contato_emergencia_telefone: contatoTelefone.trim() || null,
+        visivel_na_lista: visivelNaLista,
+        whatsapp_publico: whatsappPublico,
       })
       .eq("id", userId);
 
     setSalvando(false);
 
     if (error) {
-      console.error("Erro ao salvar perfil:", error);
       setErro(`Não foi possível salvar: ${error.message}`);
       return;
     }
@@ -173,13 +176,11 @@ export default function PerfilPage() {
       <div style={{ padding: 20, paddingBottom: 60 }}>
         {/* Foto de perfil */}
         <div style={{ display: "flex", flexDirection: "column", alignItems: "center", marginBottom: 28 }}>
-          <div
-            style={{
-              width: 96, height: 96, borderRadius: "50%", background: "var(--cor-borda-suave)",
-              display: "flex", alignItems: "center", justifyContent: "center", position: "relative",
-              overflow: "hidden", border: "2px solid var(--cor-borda)",
-            }}
-          >
+          <div style={{
+            width: 96, height: 96, borderRadius: "50%", background: "var(--cor-borda-suave)",
+            display: "flex", alignItems: "center", justifyContent: "center", position: "relative",
+            overflow: "hidden", border: "2px solid var(--cor-borda)",
+          }}>
             {fotoUrl ? (
               <img src={fotoUrl} alt="Sua foto de perfil" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
             ) : (
@@ -201,16 +202,11 @@ export default function PerfilPage() {
             <Camera size={14} />
             {enviandoFoto ? "Enviando..." : "Trocar foto"}
           </button>
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="image/*"
-            onChange={handleFotoChange}
-            style={{ display: "none" }}
-          />
+          <input ref={fileInputRef} type="file" accept="image/*" onChange={handleFotoChange} style={{ display: "none" }} />
         </div>
 
         <form onSubmit={handleSalvar}>
+          {/* Dados pessoais */}
           <SecaoTitulo texto="Dados pessoais" />
           <Campo label="Nome completo">
             <input required value={nomeCompleto} onChange={(e) => setNomeCompleto(e.target.value)} style={inputStyle} />
@@ -222,6 +218,7 @@ export default function PerfilPage() {
             <input value={whatsapp} onChange={(e) => setWhatsapp(e.target.value)} placeholder="11999999999" style={inputStyle} />
           </Campo>
 
+          {/* Endereço */}
           <SecaoTitulo texto="Endereço" />
           <div style={{ background: "var(--cor-azul-bg)", borderRadius: 10, padding: "10px 12px", display: "flex", gap: 8, marginBottom: 16 }}>
             <Shield size={15} color="var(--cor-azul)" style={{ flexShrink: 0, marginTop: 1 }} />
@@ -230,13 +227,7 @@ export default function PerfilPage() {
             </p>
           </div>
           <Campo label="CEP">
-            <input
-              value={cep}
-              onChange={(e) => handleBuscarCep(e.target.value)}
-              placeholder="00000-000"
-              maxLength={9}
-              style={inputStyle}
-            />
+            <input value={cep} onChange={(e) => handleBuscarCep(e.target.value)} placeholder="00000-000" maxLength={9} style={inputStyle} />
             {buscandoCep && <span style={{ fontSize: 12, color: "var(--cor-texto-fraco)" }}>Buscando endereço...</span>}
           </Campo>
           <Campo label="Rua">
@@ -246,6 +237,7 @@ export default function PerfilPage() {
             <input value={numero} onChange={(e) => setNumero(e.target.value)} style={inputStyle} />
           </Campo>
 
+          {/* Contato de emergência */}
           <SecaoTitulo texto="Contato de emergência" />
           <p style={{ fontSize: 12.5, color: "var(--cor-texto-fraco)", marginBottom: 14, lineHeight: 1.45 }}>
             Alguém de confiança que possa ser acionado caso aconteça algo com você.
@@ -256,6 +248,33 @@ export default function PerfilPage() {
           <Campo label="Telefone">
             <input value={contatoTelefone} onChange={(e) => setContatoTelefone(e.target.value)} placeholder="(11) 99999-9999" style={inputStyle} />
           </Campo>
+
+          {/* Privacidade */}
+          <SecaoTitulo texto="Privacidade" />
+          <p style={{ fontSize: 12.5, color: "var(--cor-texto-fraco)", marginBottom: 14, lineHeight: 1.45 }}>
+            Escolha o que outros moradores do bairro podem ver sobre você.
+          </p>
+
+          <Toggle
+            ativo={visivelNaLista}
+            onChange={setVisivelNaLista}
+            titulo="Aparecer na lista de moradores"
+            descricao="Seu nome e foto ficam visíveis para os outros moradores do Jardim França."
+            iconeAtivo={<Eye size={16} />}
+            iconeInativo={<EyeOff size={16} />}
+          />
+
+          {visivelNaLista && (
+            <Toggle
+              ativo={whatsappPublico}
+              onChange={setWhatsappPublico}
+              titulo="Exibir botão de WhatsApp"
+              descricao="Outros moradores poderão te chamar pelo WhatsApp diretamente da lista."
+              iconeAtivo={<Eye size={16} />}
+              iconeInativo={<EyeOff size={16} />}
+              destaque
+            />
+          )}
 
           {erro && (
             <p style={{ display: "flex", alignItems: "center", gap: 6, color: "var(--cor-vermelho)", fontSize: 14, marginBottom: 16 }}>
@@ -274,6 +293,7 @@ export default function PerfilPage() {
           </button>
         </form>
 
+        {/* Sair */}
         <div style={{ marginTop: 32, paddingTop: 20, borderTop: "1px solid var(--cor-borda-suave)" }}>
           <button
             type="button"
@@ -290,6 +310,63 @@ export default function PerfilPage() {
             <LogOut size={16} /> Sair da conta
           </button>
         </div>
+      </div>
+    </div>
+  );
+}
+
+function Toggle({ ativo, onChange, titulo, descricao, iconeAtivo, iconeInativo, destaque = false }) {
+  return (
+    <div
+      style={{
+        display: "flex", alignItems: "flex-start", gap: 14,
+        padding: "14px 16px", borderRadius: 14, marginBottom: 12,
+        background: ativo ? (destaque ? "#F0FDFA" : "#FFF7ED") : "#FFFFFF",
+        border: `1px solid ${ativo ? (destaque ? "#0F766E" : "var(--cor-laranja)") : "var(--cor-borda)"}`,
+        cursor: "pointer",
+        transition: "all 0.15s ease",
+      }}
+      onClick={() => onChange(!ativo)}
+    >
+      {/* Ícone */}
+      <div style={{
+        width: 36, height: 36, borderRadius: "50%", flexShrink: 0,
+        background: ativo ? (destaque ? "#0F766E" : "var(--cor-laranja)") : "var(--cor-borda-suave)",
+        display: "flex", alignItems: "center", justifyContent: "center",
+        color: ativo ? "#FFFFFF" : "var(--cor-texto-fraco)",
+        marginTop: 2,
+      }}>
+        {ativo ? iconeAtivo : iconeInativo}
+      </div>
+
+      {/* Texto */}
+      <div style={{ flex: 1 }}>
+        <div style={{
+          fontSize: 14, fontWeight: 700,
+          color: ativo ? (destaque ? "#0F766E" : "var(--cor-laranja-escuro)") : "var(--cor-texto)",
+          marginBottom: 3,
+        }}>
+          {titulo}
+        </div>
+        <div style={{ fontSize: 12.5, color: "var(--cor-texto-fraco)", lineHeight: 1.4 }}>
+          {descricao}
+        </div>
+      </div>
+
+      {/* Switch visual */}
+      <div style={{
+        width: 44, height: 24, borderRadius: 12, flexShrink: 0, marginTop: 6,
+        background: ativo ? (destaque ? "#0F766E" : "var(--cor-laranja)") : "#E2E8F0",
+        position: "relative", transition: "background 0.15s ease",
+      }}>
+        <div style={{
+          position: "absolute", top: 3,
+          left: ativo ? 23 : 3,
+          width: 18, height: 18, borderRadius: "50%",
+          background: "#FFFFFF",
+          boxShadow: "0 1px 4px rgba(0,0,0,0.2)",
+          transition: "left 0.15s ease",
+        }} />
       </div>
     </div>
   );
@@ -313,26 +390,13 @@ function Campo({ label, children }) {
 }
 
 const inputStyle = {
-  width: "100%",
-  padding: "13px 14px",
-  borderRadius: 10,
-  border: "1px solid var(--cor-borda)",
-  fontSize: 15,
-  outline: "none",
-  boxSizing: "border-box",
-  background: "#FFFFFF",
-  fontFamily: "inherit",
+  width: "100%", padding: "13px 14px", borderRadius: 10,
+  border: "1px solid var(--cor-borda)", fontSize: 15, outline: "none",
+  boxSizing: "border-box", background: "#FFFFFF", fontFamily: "inherit",
 };
 
 const botaoPrimario = {
-  width: "100%",
-  padding: "16px 0",
-  borderRadius: 12,
-  border: "none",
-  background: "var(--cor-laranja)",
-  color: "#FFF",
-  fontSize: 16,
-  fontWeight: 700,
-  cursor: "pointer",
-  marginTop: 8,
+  width: "100%", padding: "16px 0", borderRadius: 12, border: "none",
+  background: "var(--cor-laranja)", color: "#FFF", fontSize: 16,
+  fontWeight: 700, cursor: "pointer", marginTop: 8,
 };
