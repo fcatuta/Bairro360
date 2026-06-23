@@ -20,7 +20,7 @@ export default async function ComercioPage() {
 
   const { data: negocios } = await supabase
     .from("negocios")
-    .select("id, nome, categoria, plano, cupom_texto, cupom_validade, avaliacoes(nota)")
+    .select("id, nome, categoria, plano, cupom_texto, cupom_validade, whatsapp, avaliacoes(nota)")
     .eq("bairro_id", perfil?.bairro_id)
     .eq("ativo", true);
 
