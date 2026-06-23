@@ -25,16 +25,21 @@ export default async function NegocioDetalhePage({ params }) {
   const { data: authData } = await supabase.auth.getUser();
   if (!authData?.user) redirect("/login");
 
-  const { data: item } = await supabase
-    .from("negocios")
-    .select(
-      `
-      id, nome, categoria, descricao, telefone, whatsapp, plano,
-      avaliacoes ( id, nota, comentario, criado_em, autor_id, perfis ( nome_completo ) )
-      `
-    )
-    .eq("id", id)
-    .single();
+  const [{ data: item }, { data: meuPerfil }] = await Promise.all([
+    supabase
+      .from("negocios")
+      .select(
+        `id, nome, categoria, descricao, telefone, whatsapp, plano,
+        avaliacoes ( id, nota, comentario, criado_em, autor_id, perfis ( nome_completo ) )`
+      )
+      .eq("id", id)
+      .single(),
+    supabase
+      .from("perfis")
+      .select("endereco_rua, bairros(nome)")
+      .eq("id", authData.user.id)
+      .single(),
+  ]);
 
   if (!item) notFound();
 
@@ -47,6 +52,14 @@ export default async function NegocioDetalhePage({ params }) {
   const jaAvaliou = avaliacoes.some((a) => a.autor_id === authData.user.id);
   const plano = PLANOS[item.plano];
 
+  // Monta mensagem personalizada para o WhatsApp
+  const rua = meuPerfil?.endereco_rua || "";
+  const bairro = meuPerfil?.bairros?.nome || "Jardim França";
+  const localizacao = rua ? `da ${rua}, aqui no ${bairro}` : `do ${bairro}`;
+  const mensagemWhatsApp = encodeURIComponent(
+    `Olá! Vi o anúncio d${item.nome.match(/^[aeiouAEIOU]/) ? "a" : "o"} ${item.nome} no app Bairro360. Sou morador ${localizacao}. Podemos conversar?`
+  );
+
   return (
     <div style={{ maxWidth: 480, margin: "0 auto", minHeight: "100vh" }}>
       <VoltarTopBar title={item.nome} />
@@ -55,16 +68,10 @@ export default async function NegocioDetalhePage({ params }) {
         <div style={{ display: "flex", gap: 14, alignItems: "center", marginBottom: 20 }}>
           <div
             style={{
-              width: 60,
-              height: 60,
-              borderRadius: 14,
+              width: 60, height: 60, borderRadius: 14,
               background: "var(--cor-borda-suave)",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              color: "var(--cor-texto-fraco)",
-              fontWeight: 700,
-              fontSize: 22,
+              display: "flex", alignItems: "center", justifyContent: "center",
+              color: "var(--cor-texto-fraco)", fontWeight: 700, fontSize: 22,
             }}
           >
             {item.nome.charAt(0)}
@@ -100,26 +107,15 @@ export default async function NegocioDetalhePage({ params }) {
 
         {item.whatsapp && (
           <a
-            href={`https://wa.me/${item.whatsapp.replace(/\D/g, "")}`}
+            href={`https://wa.me/55${item.whatsapp.replace(/\D/g, "")}?text=${mensagemWhatsApp}`}
             target="_blank"
             rel="noopener noreferrer"
             style={{
-              width: "100%",
-              padding: "13px 0",
-              borderRadius: 12,
-              border: "none",
-              background: "var(--cor-verde)",
-              color: "#FFF",
-              fontSize: 14.5,
-              fontWeight: 700,
-              cursor: "pointer",
-              marginBottom: 24,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              gap: 8,
-              textDecoration: "none",
-              boxSizing: "border-box",
+              width: "100%", padding: "13px 0", borderRadius: 12,
+              border: "none", background: "var(--cor-verde)", color: "#FFF",
+              fontSize: 14.5, fontWeight: 700, cursor: "pointer", marginBottom: 24,
+              display: "flex", alignItems: "center", justifyContent: "center",
+              gap: 8, textDecoration: "none", boxSizing: "border-box",
             }}
           >
             <Phone size={16} /> Chamar no WhatsApp
