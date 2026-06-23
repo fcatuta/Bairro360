@@ -18,11 +18,18 @@ export default async function ComercioPage() {
 
   if (!perfil?.bairro_id) redirect("/escolher-bairro");
 
-  const { data: negocios } = await supabase
-    .from("negocios")
-    .select("id, nome, categoria, plano, cupom_texto, cupom_validade, whatsapp, avaliacoes(nota)")
-    .eq("bairro_id", perfil?.bairro_id)
-    .eq("ativo", true);
+  const [{ data: negocios }, { data: meuPerfil }] = await Promise.all([
+    supabase
+      .from("negocios")
+      .select("id, nome, categoria, plano, cupom_texto, cupom_validade, whatsapp, avaliacoes(nota)")
+      .eq("bairro_id", perfil?.bairro_id)
+      .eq("ativo", true),
+    supabase
+      .from("perfis")
+      .select("endereco_rua")
+      .eq("id", authData.user.id)
+      .single(),
+  ]);
 
   // Ranking: pagantes sempre primeiro; dentro de cada grupo, ordena por nota média.
   const lista = (negocios || [])
@@ -47,7 +54,7 @@ export default async function ComercioPage() {
         bairroId={perfil?.bairro_id}
         emergenciaAtiva={perfil?.bairros?.emergencia_ativa !== false}
       />
-      <GuiaComercialBusca negocios={lista} />
+      <GuiaComercialBusca negocios={lista} ruaMorador={meuPerfil?.endereco_rua || ""} bairroNome={perfil?.bairros?.nome || "Jardim França"} />
       <TabBar />
     </div>
   );
