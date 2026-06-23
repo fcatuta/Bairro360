@@ -2,12 +2,13 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, MapPin, Store } from "lucide-react";
+import { Home, MapPin, Store, Users } from "lucide-react";
 
 const TABS = [
   { href: "/", label: "Feed", icon: Home },
-  { href: "/mapa", label: "Mapa", icon: MapPin },
+  { href: "/moradores", label: "Moradores", icon: Users },
   { href: "/comercio", label: "Comércio", icon: Store },
+  { href: "/mapa", label: "Mapa", icon: MapPin },
 ];
 
 export default function TabBar() {
@@ -49,7 +50,7 @@ export default function TabBar() {
             }}
           >
             <Icon size={22} strokeWidth={isAtivo ? 2.5 : 2} />
-            <span style={{ fontSize: 12, fontWeight: isAtivo ? 700 : 500 }}>{t.label}</span>
+            <span style={{ fontSize: 11, fontWeight: isAtivo ? 700 : 500 }}>{t.label}</span>
           </Link>
         );
       })}
